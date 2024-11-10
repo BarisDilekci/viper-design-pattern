@@ -15,7 +15,7 @@ protocol AnyView {
     func update(with error: String)
 }
 
-final class CryptoViewController : UIViewController ,UITableViewDelegate, UITableViewDataSource, AnyView {
+class CryptoViewController : UIViewController ,UITableViewDelegate, UITableViewDataSource, AnyView {
 
     var crypto : [Crypto] = []
     var presenter:  AnyPresenter?
@@ -29,8 +29,8 @@ final class CryptoViewController : UIViewController ,UITableViewDelegate, UITabl
     
     private let messageLabel : UILabel = {
         let label = UILabel()
-        label.isHidden = true
         label.textAlignment = .center
+        label.text = "Loading..."
         label.font = UIFont.systemFont(ofSize: 20)
         label.textColor = .black
         return label
@@ -58,14 +58,20 @@ final class CryptoViewController : UIViewController ,UITableViewDelegate, UITabl
     func update(with cryptos: [Crypto]) {
         DispatchQueue.main.async {
             self.crypto = cryptos
-            self.messageLabel.isHidden = false
+            self.messageLabel.isHidden = true
             self.tableView.reloadData()
             self.tableView.isHidden = false
         }
     }
     
     func update(with error: String) {
-        //
+        DispatchQueue.main.async {
+            self.crypto = []
+            self.messageLabel.text = error
+            self.messageLabel.isHidden = false
+            self.tableView.reloadData()
+            self.tableView.isHidden = true
+        }
     }
     
 
@@ -73,9 +79,14 @@ final class CryptoViewController : UIViewController ,UITableViewDelegate, UITabl
         return crypto.count
     }
     
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = UITableViewCell(style: .default, reuseIdentifier: "cell")
-        cell.textLabel?.text = "Example Text"
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        var content = cell.defaultContentConfiguration()
+        var crypto = self.crypto[indexPath.row]
+        content.text = crypto.currency
+        content.secondaryText = crypto.price
+        cell.contentConfiguration = content
         return cell
     }
 
