@@ -9,28 +9,43 @@ import XCTest
 @testable import viper_design_pattern
 
 final class viper_design_patternTests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    var interactor: CryptoInteractor!
+    var mockPresenter: MockPresenter!
+    var mockSession: MockURLSession!
+    
+    override func setUp() {
+        super.setUp()
+        mockPresenter = MockPresenter()
+        mockSession = MockURLSession()
+        interactor = CryptoInteractor(session: mockSession)
+        interactor.presenter = mockPresenter
     }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    
+    override func tearDown() {
+        interactor = nil
+        mockPresenter = nil
+        mockSession = nil
+        super.tearDown()
     }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+    
+    func test_download_crypto_data_failure() {
+        mockSession.error = NetworkError.networkFailed
+        
+        interactor.downloadCryptoData()
+        
+        XCTAssertNotNil(mockPresenter.errorMessage)
+        XCTAssertEqual(mockPresenter.errorMessage, NetworkError.networkFailed.localizedDescription)
+        XCTAssertNil(mockPresenter.cryptoData)
     }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+    
+    func test_download_crypto_data_success() {
+        let cryptoData = "[{\"currency\": \"BTC\", \"price\": \"50000\"}]".data(using: .utf8)
+        mockSession.data = cryptoData
+        
+        interactor.downloadCryptoData()
+        
+        XCTAssertNotNil(mockPresenter.cryptoData)
+        XCTAssertEqual(mockPresenter.cryptoData?.first?.currency, "BTC")
+        XCTAssertNil(mockPresenter.errorMessage)
     }
-
 }
